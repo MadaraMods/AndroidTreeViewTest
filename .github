@@ -1,0 +1,42 @@
+name: Build Legacy APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04  # Eski versiyon kullan
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Old Java 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Setup Android SDK (Old Version)
+      run: |
+        echo "y" | sdkmanager "platforms;android-21"
+        echo "y" | sdkmanager "build-tools;20.0.0"
+        echo "y" | sdkmanager "platform-tools"
+        echo "y" | sdkmanager "extras;android;m2repository"
+
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+
+    - name: Build with Gradle 1.0.0
+      run: |
+        ./gradlew assembleDebug --stacktrace --no-daemon
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: legacy-debug-apk
+        path: app/build/outputs/apk/debug/*.apk
+        retention-days: 30
